@@ -1,0 +1,51 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+enum ProjectStatus {
+  ONGOING
+  COMPLETED
+  PENDING
+}
+
+model Transaction {
+  id          String          @id @default(uuid())
+  type        TransactionType
+  amount      Float
+  category    String
+  date        DateTime
+  description String?
+  createdAt   DateTime        @default(now())
+}
+
+model Project {
+  id          String        @id @default(uuid())
+  title       String
+  deadline    DateTime?
+  status      ProjectStatus @default(ONGOING)
+  tasks       Task[]        
+  createdAt   DateTime      @default(now())
+}
+
+model Task {
+  id          String    @id @default(uuid())
+  title       String
+  isCompleted Boolean   @default(false)
+  dueDate     DateTime?
+  
+  projectId   String?
+  project     Project?  @relation(fields: [projectId], references: [id])
+  
+  createdAt   DateTime  @default(now())
+}
