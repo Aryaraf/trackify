@@ -5,6 +5,8 @@ import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Wallet, TrendingUp, TrendingDown, Plus, History, Check, ListTodo, Trash2 } from "lucide-react";
+import { SubmitButton } from "@/components/SubmitButton";
+import { ToggleTaskButton } from "@/components/ToggleTaskButton";
 
 const formatRupiah = (angka: number) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(angka);
 const formatTanggal = (tanggal: Date) => new Intl.DateTimeFormat("id-ID", { day: "numeric", month: "short", year: "numeric" }).format(tanggal);
@@ -124,7 +126,7 @@ export default async function Dashboard() {
                   <div className="space-y-2"><label className="text-sm font-medium">Type</label><select name="type" className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" required><option value="EXPENSE">Expense</option><option value="INCOME">Income</option></select></div>
                   <div className="space-y-2"><label className="text-sm font-medium">Category</label><Input name="category" placeholder="e.g., Food" required /></div>
                   <div className="space-y-2"><label className="text-sm font-medium">Amount</label><Input type="number" name="amount" placeholder="50000" required /></div>
-                  <Button type="submit" className="w-full mt-2"><Plus className="h-4 w-4 mr-2" />Save Transaction</Button>
+                  <SubmitButton className="w-full mt-2"><Plus className="h-4 w-4 mr-2" />Save Transaction</SubmitButton>
                 </form>
               </CardContent>
             </Card>
@@ -147,9 +149,9 @@ export default async function Dashboard() {
                       {/* Tombol Hapus Transaksi (Muncul saat di-hover) */}
                       <form action={deleteTransaction}>
                         <input type="hidden" name="id" value={trx.id} />
-                        <Button type="submit" variant="ghost" size="icon" className="h-6 w-6 text-slate-300 hover:text-red-500 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <SubmitButton variant="ghost" size="icon" className="h-6 w-6 text-slate-300 hover:text-red-500 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity">
                           <Trash2 className="h-3 w-3" />
-                        </Button>
+                        </SubmitButton>
                       </form>
                     </div>
                   </div>
@@ -178,7 +180,7 @@ export default async function Dashboard() {
                   <option value="PROJECT">New Project</option>
                 </select>
                 <Input name="title" placeholder="What do you want to do?" className="flex-1" required />
-                <Button type="submit" size="icon" className="shrink-0"><Plus className="h-4 w-4" /></Button>
+                <SubmitButton size="icon" className="shrink-0"><Plus className="h-4 w-4" /></SubmitButton>
               </form>
               
               <div className="space-y-1 pt-2 border-t border-slate-100">
@@ -192,19 +194,14 @@ export default async function Dashboard() {
                       <form action={toggleTask} className="flex-1">
                         <input type="hidden" name="id" value={task.id} />
                         <input type="hidden" name="status" value={String(task.isCompleted)} />
-                        <button type="submit" className="flex items-center space-x-3 text-left w-full p-1">
-                          <div className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border ${task.isCompleted ? 'bg-primary border-primary text-primary-foreground' : 'border-slate-300'}`}>
-                            {task.isCompleted && <Check className="h-3 w-3" />}
-                          </div>
-                          <span className={`text-sm font-medium leading-none ${task.isCompleted ? "line-through text-slate-400" : ""}`}>{task.title}</span>
-                        </button>
+                        <ToggleTaskButton isCompleted={task.isCompleted} title={task.title} />
                       </form>
                       {/* Tombol Hapus Tugas Harian */}
                       <form action={deleteTask}>
                         <input type="hidden" name="id" value={task.id} />
-                        <Button type="submit" variant="ghost" size="icon" className="h-6 w-6 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <SubmitButton variant="ghost" size="icon" className="h-6 w-6 text-slate-300 hover:text-red-500 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity">
                           <Trash2 className="h-3 w-3" />
-                        </Button>
+                        </SubmitButton>
                       </form>
                     </div>
                   ))
@@ -241,9 +238,9 @@ export default async function Dashboard() {
                         <span className="text-sm font-bold text-slate-500">{progressValue}%</span>
                         <form action={deleteProject}>
                           <input type="hidden" name="id" value={project.id} />
-                          <Button type="submit" variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-red-500 hover:bg-red-50">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          <SubmitButton variant="ghost" size="icon" className="h-6 w-6 text-slate-300 hover:text-red-500 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Trash2 className="h-3 w-3" />
+                          </SubmitButton>
                         </form>
                       </div>
                     </div>
@@ -271,9 +268,9 @@ export default async function Dashboard() {
                           {/* Tombol Hapus Sub-Task */}
                           <form action={deleteTask}>
                             <input type="hidden" name="id" value={task.id} />
-                            <Button type="submit" variant="ghost" size="icon" className="h-6 w-6 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <SubmitButton variant="ghost" size="icon" className="h-6 w-6 text-slate-300 hover:text-red-500 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity">
                               <Trash2 className="h-3 w-3" />
-                            </Button>
+                            </SubmitButton>
                           </form>
                         </div>
                       ))}
@@ -284,7 +281,7 @@ export default async function Dashboard() {
                     <form action={addSubTask} className="flex gap-2 w-full">
                       <input type="hidden" name="projectId" value={project.id} />
                       <Input name="title" placeholder="Tambah sub-task baru..." className="h-8 text-sm bg-white" required />
-                      <Button type="submit" size="sm" variant="secondary"><Plus className="h-4 w-4" /></Button>
+                      <SubmitButton size="icon" className="shrink-0"><Plus className="h-4 w-4" /></SubmitButton>
                     </form>
                   </CardFooter>
 
