@@ -3,7 +3,6 @@ import { revalidatePath } from "next/cache";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Wallet, TrendingUp, TrendingDown, Plus, History, Check, ListTodo, Trash2 } from "lucide-react";
 import { SubmitButton } from "@/components/SubmitButton";
 import { ToggleTaskButton } from "@/components/ToggleTaskButton";

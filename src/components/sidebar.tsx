@@ -16,14 +16,14 @@ export function Sidebar() {
           <span>Dashboard</span>
         </Link>
         
-        <Link href="#" className="flex items-center gap-3 px-3 py-2.5 rounded-md text-slate-400 hover:bg-slate-800 hover:text-white transition-colors">
+        <Link href="/finance" className="flex items-center gap-3 px-3 py-2.5 rounded-md text-slate-400 hover:bg-slate-800 hover:text-white transition-colors">
           <Wallet className="h-5 w-5" />
-          <span>Keuangan</span>
+          <span>Finance</span>
         </Link>
         
-        <Link href="#" className="flex items-center gap-3 px-3 py-2.5 rounded-md text-slate-400 hover:bg-slate-800 hover:text-white transition-colors">
+        <Link href="/projects" className="flex items-center gap-3 px-3 py-2.5 rounded-md text-slate-400 hover:bg-slate-800 hover:text-white transition-colors">
           <FolderKanban className="h-5 w-5" />
-          <span>Project</span>
+          <span>Projects</span>
         </Link>
       </nav>
 
