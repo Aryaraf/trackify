@@ -1,11 +1,10 @@
-// File: src/app/keuangan/page.tsx
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Wallet, TrendingUp, TrendingDown, History, Trash2, Calendar } from "lucide-react";
-import { SubmitButton } from "@/components/SubmitButton"; // Menggunakan komponen dari update sebelumnya
+import { SubmitButton } from "@/components/SubmitButton";
 
 const formatRupiah = (angka: number) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(angka);
 const formatTanggal = (tanggal: Date) => new Intl.DateTimeFormat("id-ID", { day: "numeric", month: "short", year: "numeric" }).format(tanggal);
@@ -15,44 +14,49 @@ export default async function KeuanganPage({ searchParams }: { searchParams: Pro
   
   // 1. SETUP FILTER BULAN & PAGINATION
   const currentDate = new Date();
-  // Format bawaan input type="month" adalah YYYY-MM
   const defaultMonth = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
   
   const selectedMonth = params.month || defaultMonth;
   const currentPage = Number(params.page) || 1;
-  const limit = 10; // Jumlah transaksi maksimum per halaman
+  const limit = 10;
 
-  // Ekstrak hari pertama dan terakhir pada bulan yang dipilih
   const [year, month] = selectedMonth.split("-");
   const startDate = new Date(Number(year), Number(month) - 1, 1);
   const endDate = new Date(Number(year), Number(month), 0, 23, 59, 59);
 
   // 2. QUERY DATABASE PRISMA
-  const whereCondition = { date: { gte: startDate, lte: endDate } };
 
-  // Hitung total data untuk angka halaman maksimal
-  const totalRecords = await prisma.transaction.count({ where: whereCondition });
+  // A. Kondisi Bulanan (Untuk riwayat dan arus kas bulan ini)
+  const monthlyCondition = { date: { gte: startDate, lte: endDate } };
+  
+  // B. Kondisi Akumulasi (Untuk total saldo: hitung semua uang dari awal s/d akhir bulan ini)
+  const balanceCondition = { date: { lte: endDate } };
+
+  const totalRecords = await prisma.transaction.count({ where: monthlyCondition });
   const totalPages = Math.ceil(totalRecords / limit) || 1;
 
-  // Tarik data dengan metode offset pagination (skip & take)
   const transactions = await prisma.transaction.findMany({
-    where: whereCondition,
+    where: monthlyCondition,
     orderBy: { date: "desc" },
     skip: (currentPage - 1) * limit,
     take: limit,
   });
 
-  // Kalkulasi rekap kartu atas khusus untuk bulan yang dipilih
-  const incomeResult = await prisma.transaction.aggregate({ _sum: { amount: true }, where: { ...whereCondition, type: "INCOME" } });
-  const expenseResult = await prisma.transaction.aggregate({ _sum: { amount: true }, where: { ...whereCondition, type: "EXPENSE" } });
-  const netTotal = (incomeResult._sum.amount || 0) - (expenseResult._sum.amount || 0);
+  // Kalkulasi KHUSUS BULAN INI (Arus Kas)
+  const monthlyIncome = await prisma.transaction.aggregate({ _sum: { amount: true }, where: { ...monthlyCondition, type: "INCOME" } });
+  const monthlyExpense = await prisma.transaction.aggregate({ _sum: { amount: true }, where: { ...monthlyCondition, type: "EXPENSE" } });
+
+  // Kalkulasi AKUMULASI (Sisa Uang Asli)
+  const totalIncome = await prisma.transaction.aggregate({ _sum: { amount: true }, where: { ...balanceCondition, type: "INCOME" } });
+  const totalExpense = await prisma.transaction.aggregate({ _sum: { amount: true }, where: { ...balanceCondition, type: "EXPENSE" } });
+  const netTotal = (totalIncome._sum.amount || 0) - (totalExpense._sum.amount || 0);
 
   // 3. SERVER ACTION PENGHAPUSAN
   async function deleteTransaction(formData: FormData) {
     "use server";
     await prisma.transaction.delete({ where: { id: formData.get("id") as string } });
-    revalidatePath("/keuangan"); 
-    revalidatePath("/"); // Update saldo di dashboard juga
+    revalidatePath("/finance"); 
+    revalidatePath("/"); 
   }
 
   return (
@@ -66,9 +70,8 @@ export default async function KeuanganPage({ searchParams }: { searchParams: Pro
             <p className="text-muted-foreground mt-1">Kelola riwayat keuangan bulanan</p>
           </div>
 
-          {/* Form Native GET: Submit form akan mengubah URL parameter otomatis */}
           <form method="GET" className="flex items-center gap-2 bg-white p-2 rounded-lg border border-slate-200 shadow-sm">
-            <input type="hidden" name="page" value="1" /> {/* Paksa kembali ke halaman 1 saat filter diubah */}
+            <input type="hidden" name="page" value="1" />
             <Calendar className="h-5 w-5 text-slate-400 ml-2" />
             <input 
               type="month" 
@@ -81,17 +84,44 @@ export default async function KeuanganPage({ searchParams }: { searchParams: Pro
           </form>
         </div>
 
-        {/* RINGKASAN BULANAN (Menyesuaikan dengan filter) */}
+        {/* RINGKASAN KEUANGAN */}
         <div className="grid gap-4 md:grid-cols-3">
-          <Card><CardHeader className="pb-2 flex flex-row justify-between"><CardTitle className="text-sm">Saldo ({selectedMonth})</CardTitle><Wallet className="h-4 w-4" /></CardHeader><CardContent><div className="text-2xl font-bold">{formatRupiah(netTotal)}</div></CardContent></Card>
-          <Card><CardHeader className="pb-2 flex flex-row justify-between"><CardTitle className="text-sm">Pemasukan</CardTitle><TrendingUp className="h-4 w-4 text-green-500" /></CardHeader><CardContent><div className="text-2xl font-bold text-green-600">+{formatRupiah(incomeResult._sum.amount || 0)}</div></CardContent></Card>
-          <Card><CardHeader className="pb-2 flex flex-row justify-between"><CardTitle className="text-sm">Pengeluaran</CardTitle><TrendingDown className="h-4 w-4 text-red-500" /></CardHeader><CardContent><div className="text-2xl font-bold text-red-600">-{formatRupiah(expenseResult._sum.amount || 0)}</div></CardContent></Card>
+          {/* Saldo menggunakan data AKUMULASI */}
+          <Card className="bg-slate-900 text-white border-none shadow-md">
+            <CardHeader className="pb-2 flex flex-row justify-between">
+              <CardTitle className="text-sm text-slate-300">Total Saldo</CardTitle>
+              <Wallet className="h-4 w-4 text-slate-400" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{formatRupiah(netTotal)}</div>
+            </CardContent>
+          </Card>
+          
+          {/* Pemasukan & Pengeluaran menggunakan data BULANAN */}
+          <Card>
+            <CardHeader className="pb-2 flex flex-row justify-between">
+              <CardTitle className="text-sm">Masuk (Bulan Ini)</CardTitle>
+              <TrendingUp className="h-4 w-4 text-green-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">+{formatRupiah(monthlyIncome._sum.amount || 0)}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2 flex flex-row justify-between">
+              <CardTitle className="text-sm">Keluar (Bulan Ini)</CardTitle>
+              <TrendingDown className="h-4 w-4 text-red-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-red-600">-{formatRupiah(monthlyExpense._sum.amount || 0)}</div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* TABEL TRANSAKSI */}
         <Card>
           <CardHeader className="border-b border-slate-100 pb-4">
-            <CardTitle className="text-lg flex items-center gap-2"><History className="h-5 w-5" /> Riwayat Transaksi</CardTitle>
+            <CardTitle className="text-lg flex items-center gap-2"><History className="h-5 w-5" /> Riwayat Bulan {selectedMonth}</CardTitle>
           </CardHeader>
           <CardContent className="pt-4">
             {transactions.length === 0 ? (
@@ -125,7 +155,7 @@ export default async function KeuanganPage({ searchParams }: { searchParams: Pro
         {/* KONTROL PAGINATION */}
         <div className="flex justify-between items-center px-2 py-4">
           {currentPage > 1 ? (
-            <Link href={`/keuangan?month=${selectedMonth}&page=${currentPage - 1}`}>
+            <Link href={`/finance?month=${selectedMonth}&page=${currentPage - 1}`}>
               <Button variant="outline" size="sm">Sebelumnya</Button>
             </Link>
           ) : (
@@ -137,7 +167,7 @@ export default async function KeuanganPage({ searchParams }: { searchParams: Pro
           </span>
           
           {currentPage < totalPages ? (
-            <Link href={`/keuangan?month=${selectedMonth}&page=${currentPage + 1}`}>
+            <Link href={`/finance?month=${selectedMonth}&page=${currentPage + 1}`}>
               <Button variant="outline" size="sm">Selanjutnya</Button>
             </Link>
           ) : (
