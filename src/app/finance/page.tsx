@@ -24,7 +24,7 @@ export default async function KeuanganPage({ searchParams }: { searchParams: Pro
   const startDate = new Date(Number(year), Number(month) - 1, 1);
   const endDate = new Date(Number(year), Number(month), 0, 23, 59, 59);
 
-  // 2. QUERY DATABASE PRISMA
+// 2. QUERY DATABASE PRISMA
 
   // A. Kondisi Bulanan (Untuk riwayat dan arus kas bulan ini)
   const monthlyCondition = { date: { gte: startDate, lte: endDate } };
@@ -32,23 +32,29 @@ export default async function KeuanganPage({ searchParams }: { searchParams: Pro
   // B. Kondisi Akumulasi (Untuk total saldo: hitung semua uang dari awal s/d akhir bulan ini)
   const balanceCondition = { date: { lte: endDate } };
 
-  const totalRecords = await prisma.transaction.count({ where: monthlyCondition });
+  // JALANKAN SEMUA QUERY SECARA BERSAMAAN (PARALEL) BIAR NGEBUT!
+  const [
+    totalRecords,
+    transactions,
+    monthlyIncome,
+    monthlyExpense,
+    totalIncome,
+    totalExpense
+  ] = await Promise.all([
+    prisma.transaction.count({ where: monthlyCondition }),
+    prisma.transaction.findMany({
+      where: monthlyCondition,
+      orderBy: { date: "desc" },
+      skip: (currentPage - 1) * limit,
+      take: limit,
+    }),
+    prisma.transaction.aggregate({ _sum: { amount: true }, where: { ...monthlyCondition, type: "INCOME" } }),
+    prisma.transaction.aggregate({ _sum: { amount: true }, where: { ...monthlyCondition, type: "EXPENSE" } }),
+    prisma.transaction.aggregate({ _sum: { amount: true }, where: { ...balanceCondition, type: "INCOME" } }),
+    prisma.transaction.aggregate({ _sum: { amount: true }, where: { ...balanceCondition, type: "EXPENSE" } })
+  ]);
+
   const totalPages = Math.ceil(totalRecords / limit) || 1;
-
-  const transactions = await prisma.transaction.findMany({
-    where: monthlyCondition,
-    orderBy: { date: "desc" },
-    skip: (currentPage - 1) * limit,
-    take: limit,
-  });
-
-  // Kalkulasi KHUSUS BULAN INI (Arus Kas)
-  const monthlyIncome = await prisma.transaction.aggregate({ _sum: { amount: true }, where: { ...monthlyCondition, type: "INCOME" } });
-  const monthlyExpense = await prisma.transaction.aggregate({ _sum: { amount: true }, where: { ...monthlyCondition, type: "EXPENSE" } });
-
-  // Kalkulasi AKUMULASI (Sisa Uang Asli)
-  const totalIncome = await prisma.transaction.aggregate({ _sum: { amount: true }, where: { ...balanceCondition, type: "INCOME" } });
-  const totalExpense = await prisma.transaction.aggregate({ _sum: { amount: true }, where: { ...balanceCondition, type: "EXPENSE" } });
   const netTotal = (totalIncome._sum.amount || 0) - (totalExpense._sum.amount || 0);
 
   // 3. SERVER ACTION PENGHAPUSAN

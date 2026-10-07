@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation"; // Hook buat baca URL
+import { usePathname } from "next/navigation"; 
 import { LayoutDashboard, Wallet, FolderKanban, Settings } from "lucide-react";
 import { UserButton } from "@clerk/nextjs";
 
@@ -31,8 +31,8 @@ export function Sidebar() {
               key={item.name}
               href={item.href}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-md font-medium transition-colors ${isActive
-                  ? "bg-primary text-primary-foreground" // Warna kalau aktif
-                  : "text-slate-400 hover:bg-slate-800 hover:text-white" // Warna kalau pasif
+                  ? "bg-primary text-primary-foreground" 
+                  : "text-slate-400 hover:bg-slate-800 hover:text-white" 
                 }`}
             >
               <item.icon className="h-5 w-5" />
