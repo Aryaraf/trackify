@@ -1,8 +1,20 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation"; // Hook buat baca URL
 import { LayoutDashboard, Wallet, FolderKanban, Settings } from "lucide-react";
-import { UserButton } from "@clerk/nextjs"; // Import tombol profil dari Clerk
+import { UserButton } from "@clerk/nextjs";
 
 export function Sidebar() {
+  const pathname = usePathname(); 
+
+ 
+  const navItems = [
+    { name: "Dashboard", href: "/", icon: LayoutDashboard },
+    { name: "Finance", href: "/finance", icon: Wallet },
+    { name: "Projects", href: "/projects", icon: FolderKanban },
+  ];
+
   return (
     <aside className="w-64 bg-slate-900 text-slate-50 h-screen flex-col hidden md:flex font-mono">
       <div className="p-6">
@@ -11,30 +23,31 @@ export function Sidebar() {
       </div>
 
       <nav className="flex-1 px-4 space-y-2 mt-4">
-        <Link href="/" className="flex items-center gap-3 px-3 py-2.5 rounded-md bg-primary text-primary-foreground font-medium transition-colors">
-          <LayoutDashboard className="h-5 w-5" />
-          <span>Dashboard</span>
-        </Link>
-        
-        <Link href="/finance" className="flex items-center gap-3 px-3 py-2.5 rounded-md text-slate-400 hover:bg-slate-800 hover:text-white transition-colors">
-          <Wallet className="h-5 w-5" />
-          <span>Finance</span>
-        </Link>
-        
-        <Link href="/projects" className="flex items-center gap-3 px-3 py-2.5 rounded-md text-slate-400 hover:bg-slate-800 hover:text-white transition-colors">
-          <FolderKanban className="h-5 w-5" />
-          <span>Projects</span>
-        </Link>
+        {navItems.map((item) => {
+          const isActive = pathname === item.href;
+
+          return (
+            <Link
+              key={item.name}
+              href={item.href}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-md font-medium transition-colors ${isActive
+                  ? "bg-primary text-primary-foreground" // Warna kalau aktif
+                  : "text-slate-400 hover:bg-slate-800 hover:text-white" // Warna kalau pasif
+                }`}
+            >
+              <item.icon className="h-5 w-5" />
+              <span>{item.name}</span>
+            </Link>
+          );
+        })}
       </nav>
 
-      {/* Bagian Bawah: Pengaturan & Profil User */}
       <div className="p-4 border-t border-slate-800 mt-auto flex items-center justify-between">
         <Link href="#" className="flex items-center gap-3 px-3 py-2.5 rounded-md text-slate-400 hover:bg-slate-800 hover:text-white transition-colors flex-1">
           <Settings className="h-5 w-5" />
           <span>Pengaturan</span>
         </Link>
-        
-        {/* Ini dia tombol profil otomatis dari Clerk */}
+
         <div className="pl-2">
           <UserButton />
         </div>
